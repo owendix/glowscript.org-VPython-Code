@@ -1,7 +1,8 @@
-# -*- coding: utf-8 -*-
 GlowScript 2.1 VPython
 """
-Launches a water balloon until it hits the ground, using different approximations
+Launches a water balloon until it hits the ground, using 2nd-order explicit method
+Compares the effect of different approximations/assumptions:
+*No drag, mass of launcher negligible, no gravity in the launcher
 
 Persistent assumptions: 
 *Elastic force is always at angle = ang ( = 45deg)
@@ -9,14 +10,18 @@ Persistent assumptions:
 *Ignores density and thickness of the water balloon rubber.
 *Stops when it gets to its original height, at the beginning in the launcher!!
 
-#May be something wrong: at ang = 20 degrees, drag and ignoring 
-#the mass of the launcher makes it go farther...?
+The rate doesn't affect printed impact point
 """
 
 #To do: 
 #graphing posx/y, velx/y, accx/y, Eg/k/tot
 #
-Li = 1.2     #arange(L0+0.1,2.0,0.02), look ~line 33 for
+Li = 1.25     #arange(L0+0.1,2.0,0.02), look ~line 33 for
+m = 0.175         #0.15 to 0.2 kg
+ang = radians(45)        #degrees, gets converted to radians
+
+dt = 2**-7
+the_rate=500
 
 makeGraphs = True
 #These are cycled later
@@ -24,12 +29,7 @@ makeGraphs = True
 #ignoreGinL = True   #ignore force of gravity in the launcher: True-->goes farther
 #ignoreML = True    #ignore work done by bands on launcher (mL): True-->goes farther
 
-m = 0.175         #0.15 to 0.2 kg
-
-method = 'mixedeuler'   #mixedeuler, simulteuler (simultaneous euler)
-
-dt = 0.0625
-the_rate=10
+canv_width=1000
 
 #Launcher properties
 #elastic constant of launcher, measured
@@ -41,13 +41,14 @@ m_ratio = m/(m+mL*(cmL**2))   #based off of work split between m and mL
 
 #Initial water balloon height
 wby0 = 0        #meters above ground, where it starts in the launcher
-ang = 45        #degrees, gets converted to radians
-ang *= (pi/180)
 
 #Ground properties
 xmax = 25       #m
 gthick = 1
-scene=display(center=vec(0.5*xmax,wby0,0),autoscale=True,align="left")
+
+scene=display(width=canv_width,height=(9/16)*canv_width,
+    center=vec(0.5*xmax,wby0,0),autoscale=True,align="left")
+
 ground = box(pos=vec(0.5*xmax,-0.5*gthick,0), length=xmax,width=10,
             height=gthick,color=color.green)
 
@@ -92,6 +93,11 @@ if makeGraphs:
 z = sqrt(Li**2 - L0**2)
 yrelease = z*sin(ang)
 xrelease = z*cos(ang)
+#attachment points for thw launcher band (want to simulate this for effect)
+p1 = vec(xrelease,yrelease,-L0)
+p2 = vec(xrelease,yrelease,L0)
+band1=cylinder(pos=p1,axis=wb.pos-p1,radius=R,color=color.white)
+band2=cylinder(pos=p2,axis=wb.pos-p2,radius=R,color=color.white)
 
 for i in range(5):
     t = 0
@@ -120,8 +126,11 @@ for i in range(5):
         
         #wb starts at y = 0, moves up until released
         if wb.pos.y < yrelease and wb.pos.x < xrelease:
-            z2 = mag2(wb.pos - vec(yrelease,yrelease,0))
-            L = sqrt(z2 + L0**2)
+            #z2 = mag2(wb.pos - vec(yrelease,yrelease,0))
+            #L = sqrt(z2 + L0**2)
+            band1.axis=wb.pos-p1
+            band2.axis=wb.pos-p2
+            L=mag(band1.axis)
             FL = (k*(L - L0))*unitVecAng
             if not ignoreML:
                 FL = FL*m_ratio  #water balloon's mass-fraction of system
@@ -147,12 +156,24 @@ for i in range(5):
             accx_s.plot(t,wb.a.x)
             accy_s.plot(t,wb.a.y)
         
-        if 'mixed' in method:
-            wb.v = wb.v + wb.a*dt
-            wb.pos = wb.pos + wb.v*dt
-        else:       #simultaneous euler, updated vel not used to update position
-            wb.pos = wb.pos + wb.v*dt
-            wb.v = wb.v + wb.a*dt
+        #update using midpoint (central point approximation to derivative)
+        if n == 0:  #first step, use euler
+            vold = wb.v
+            rold = wb.pos
+            dt *= 0.5
+            
+        rtmp = rold + wb.v*2*dt
+        vtmp = vold + wb.a*2*dt
+        
+        #store old point for next iteration
+        rold = wb.pos
+        vold = wb.v
+        #update position and velocity
+        wb.pos = rtmp
+        wb.v = vtmp
+        
+        if n == 0:
+            dt *= 2
         
         n += 1
         t += dt
