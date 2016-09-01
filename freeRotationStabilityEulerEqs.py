@@ -15,7 +15,7 @@ print("""
     conditions so its long term behavior is not to be trusted. The exponential that
     appears is not tapered off so the behavior we see is exactly what we should
     expect from such an approximation. Odd behavior with the numerical algorithm
-    is due to a frame rate (the_rate) that doesn't match your computer speed.
+    is probably due to gimbal lock since I have yet to implement quaternion rotations.
     The algorithm roughly conserves energy, it actually decays slowly with
     time on average, though it does vary slightly. It also conserves
     angular momentum. Both of these are indicators that the algorithm is correct.
