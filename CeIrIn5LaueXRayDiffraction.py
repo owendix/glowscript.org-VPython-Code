@@ -22,6 +22,7 @@ else:
 #rangeFact = 5
 
 print('Beam incident along CeIrIn5\'s '+the_axis+'-axis')
+print('One a-axis is vertical')
 
 #s0 is the incident beam direction
 #s will be the diffracted beam UNIT vector
