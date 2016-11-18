@@ -1,6 +1,11 @@
-GlowScript 2.1 VPython
+GlowScript 2.2 VPython
 #Shows the image and two principal rays for an object for different 
 #thin geometric optics: convex lens, concave lens, convex mirror, concave mirror
+h_o_fac = 0.666     #0.666, good visibility, smaller for better thin optic approx
+
+show_oi = True
+
+#to invert the colors on a Mac: Control-Option-Command-8
 
 f_mag = 1       #magnitude of focus
 f = f_mag
@@ -11,8 +16,10 @@ optic_types = ['convex lens','concave lens','convex mirror','concave mirror']
 optic_type = optic_types[0]
 
 optic_blue = vec(0.75,0.75,1)
+obj_color = color.cyan
+img_color = color.orange
 optic_opac = 0.5
-image_opac = 0.5
+image_opac = 0.85
 vray_opac = 0.333
 silver = vec(0.75,0.75,0.75)
 f_color=color.red
@@ -42,6 +49,8 @@ rays=[[],[],[]]  #rays = [[ray1], [ray2], [ray3]]
 fs = []
 c_curve = 0
 optic_tails = []
+o_label=0
+i_label=0
 o = 2*f_mag    #must be positive (left side), set initial object location
 i = o*f_mag/(o-f_mag)
 ang0 = 0
@@ -113,17 +122,18 @@ def make_optic():
 def make_object():
     global object, o
     #object must be on negative side
-    h_o = 0.666*f_mag
+    h_o = h_o_fac*f_mag
     if o < 0:
         o = -o
     elif o > 4*f_mag:
         o = 4*f_mag
     object = arrow(pos=vec(-o,0,0),axis=vec(0,h_o,0),shaftwidth=0.1*abs(h_o),
-                    color=color.blue)
+                    color=obj_color)
+                    
 
 
-def make_image():
-    global image, rays, o, i
+def make_image(is_default):
+    global image, rays, o, i, o_label, i_label
     o = -object.pos.x
     i = o*f/(o-f)    
     h_i = -(i/o)*object.axis.y
@@ -140,7 +150,7 @@ def make_image():
             sw = 0.1*abs(h_i)
             image = arrow(pos=vec(i,h_iy,0),axis=vec(0,h_i,0),
                     shaftwidth=sw, headwidth = 2*sw, headlength=3*sw,
-                    color=color.orange, opacity=image_opac)
+                    color=img_color, opacity=image_opac)
     else:
         try:    #if image != 0
             image.pos=vec(-i,h_iy,0)
@@ -154,10 +164,24 @@ def make_image():
             image = arrow(pos=vec(-i,h_iy,0),axis=vec(0,h_i,0),
                     shaftwidth=sw, headwidth = 2*sw, headlength=3*sw,
                     color=color.orange, opacity=image_opac)
+    if show_oi:
+        if not is_default:
+            o_label.text='o='+'{0:.2f}'.format(o)+'f'
+            i_label.text='i='+'{0:.2f}'.format(i)+'f'
+        else:
+            o_label=label(text='o='+'{0:.2f}'.format(o)+'f',pos=vec(-5.75*f_mag,-0.45*op_h,0),
+                    align='left',height=16, font='monospace',
+                    box=False,line=False,xoffset=0,yoffset=0,opacity=0,
+                    color=obj_color,visible=True)
+            i_label=label(text='i='+'{0:.2f}'.format(i)+'f',pos=vec(-5.75*f_mag,-0.5*op_h,0),
+                    align='left',height=16, font='monospace',
+                    box=False,line=False,xoffset=0,yoffset=0,opacity=0,
+                    color=img_color,visible=True)
+        
 
 make_optic()
 make_object()
-make_image()
+make_image(True)
             
 
 drag = False
@@ -188,13 +212,15 @@ scene.bind("mousedown", def ():
 
 scene.bind("mousemove", def ():
     global drag, object
-    eps=abs(object.shaftwidth)
-    if drag and object.pos.x <= 0: # mouse button is down
-        object.pos = scene.mouse.pos + diff_vec0
+    eps=0.1*abs(object.shaftwidth)
+    if drag and object.pos.x <= -eps: # mouse button is down
+        new_pos = scene.mouse.pos + diff_vec0
+        if new_pos.x < -eps:
+            object.pos = new_pos
         if object.pos.x > -eps:
             object.pos = object.pos - vec(eps,0,0)
             drag = False
-        make_image()
+        make_image(False)
         move_rays()
 )
 
@@ -351,10 +377,10 @@ bray2 = button(text='Show Ray 2', bind=make_ray2)
 scene.append_to_caption('\t\t')
 
 
-thin_optic=label(text='thin optics approximation: rays drawn to vertical center'
-            +' line and assumed sufficiently tall',
-            pos=vec(0,-0.5*op_h,0),align='center',color=color.red,box=False,
-            line=False,height=16,opacity=0,yoffset=-1)
+thin_optic=label(text='thin optics approximation: rays are drawn to vertical center'
+            +' line and optics are assumed sufficiently tall',
+            pos=vec(0,-0.5*op_h,0),align='center',color=color.white,box=False,
+            line=False,height=14,opacity=0,yoffset=-1)
 
 #move principal rays
 def move_rays():
@@ -466,20 +492,19 @@ def wavelength_to_rgb(wavelength):
 scene.append_to_caption('\n\n<b>Vary the principal ray color (wavelength): <b\>\n\n')
 
 def vary_color(lc):
-    global is_white, ray_color, rays lc_radio, lc_slider
-    try:
-        if 'white' in lc.text:  #its the radio
-            is_white = not is_white
-            lc_radio.checked = is_white
-    except: #its the slider
+    global is_white, ray_color, rays, lc_radio
+    
+    if 'white' in lc.text:  #its the radio
+        is_white = lc_radio.checked
+        #lc_radio.checked = is_white
+    else: #its the slider
         #print('its the slider')    #works
         is_white = False
         lc_radio.checked = False
-
     
     #change the light_color variable
     if not is_white:
-        lc_value = lc.value
+        lc_value = lc_slider.value
         R,G,B = wavelength_to_rgb(lc_value*1e-9)
         ray_color = vec(R,G,B)
 
@@ -492,6 +517,7 @@ def vary_color(lc):
             
 #wavelength in nanometers
 lc_slider=slider(value=585,min=380,max=750,step=1,length=0.4*cw,bind=vary_color)
+lc_slider.text='color'  #append for checking purpose
 
 scene.append_to_caption('\t')
 
