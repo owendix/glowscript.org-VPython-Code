@@ -5,12 +5,12 @@ GlowScript 2.2 VPython
 the_rate0 = 100 #
 the_rate = 1.0*the_rate0
 
-Nwaves = 4      #can include superposition of many waves
+Nwaves = 6      #can include superposition of many waves
 #min is 2 waves, more than 5 and it slows down a fair amount
 if Nwaves < 2:
     Nwaves = 2
-elif Nwaves > 5:
-    Nwaves = 5
+elif Nwaves > 8:
+    Nwaves = 8
 wave_radfac = 1/800
 sumwave_radfac = 3
 sumwave_color = color.white
@@ -150,7 +150,8 @@ def change_sumwave():
         sumwave.modify(i,y=pts_base[i].y)
 
 #add labels for waves
-wave0_txt = 'wave1\nA='+str(As[0])+'\nL='+str(v*Ts[0])+'m\nT='+str(Ts[0])+'s\ns='+str(shifts[0])
+wave0_txt = 'wave1\nA='+'{:.2f}'.format(As[0])+'\nL='+'{:.2f}'.format(v*Ts[0])
+wave0_txt += 'm\nT='+'{:.2f}'.format(Ts[0])+'s\ns='+'{:.2f}'.format(shifts[0])
 wave0_txt += '\ndir='+str(dirs[0])
 wave0_lbl = label(text=wave0_txt, pos=vec(0,y_max,0),box=False,line=False,
                 opacity=0,height=font_h,
@@ -199,49 +200,50 @@ for i in range(2,Nwaves):
     wave_vis.append(button(text='Show wave'+str(i+1),pos=scn.title_anchor, 
             bind=toggle_wave_visibility))
 
-            
+
+def set_wave_lbl(i):
+    global wave0_lbl, wave1_lbl
+    
+    if i == 0:
+        wave0_txt = 'wave1\nA='+'{:.2f}'.format(As[i])+'\nL='+'{:.2f}'.format(v*Ts[i])
+        wave0_txt += 'm\nT='+'{:.2f}'.format(Ts[i])+'s\ns='+'{:.2f}'.format(shifts[i])
+        wave0_txt += '\ndir='+str(dirs[i])
+        wave0_lbl.text=wave0_txt
+    elif i == 1:
+        wave1_txt = 'wave1\nA='+'{:.2f}'.format(As[i])+'\nL='+'{:.2f}'.format(v*Ts[i])
+        wave1_txt += 'm\nT='+'{:.2f}'.format(Ts[i])+'s\ns='+'{:.2f}'.format(shifts[i])
+        wave1_txt += '\ndir='+str(dirs[i])
+        wave1_lbl.text=wave1_txt
 
 def set_A(s):
-    global As, wave1_lbl
+    global As
     i = s.wavenum
     As[i] = s.value
-    if i == 1:
-        wave1_txt = 'wave2\nA='+'{:.2f}'.format(As[1])+'\nL='+'{:.2f}'.format(v*Ts[1])
-        wave1_txt += 'm\nT='+'{:.2f}'.format(Ts[1])+'s\ns='+'{:.2f}'.format(shifts[1])
-        wave1_txt += '\ndir='+str(dirs[1])
-        wave1_lbl.text=wave1_txt
+    set_wave_lbl(i)
     
     change_wave(i,As[i],Ts[i],shifts[i],dirs[i])
     change_sumwave()
     
 def set_T(s):
-    global Ts, wave1_lbl
+    global Ts
     i = s.wavenum
     Ts[i] = s.value
-    if i == 1:
-        wave1_txt = 'wave2\nA='+'{:.2f}'.format(As[1])+'\nL='+'{:.2f}'.format(v*Ts[1])
-        wave1_txt += 'm\nT='+'{:.2f}'.format(Ts[1])+'s\ns='+'{:.2f}'.format(shifts[1])
-        wave1_txt += '\ndir='+str(dirs[1])
-        wave1_lbl.text=wave1_txt
+    set_wave_lbl(i)
         
     change_wave(i,As[i],Ts[i],shifts[i],dirs[i])
     change_sumwave()
     
 def set_shift(s):
-    global shifts, wave1_lbl
+    global shifts
     i = s.wavenum
     shifts[i] = s.value
-    if i == 1:
-        wave1_txt = 'wave2\nA='+'{:.2f}'.format(As[1])+'\nL='+'{:.2f}'.format(v*Ts[1])
-        wave1_txt += 'm\nT='+'{:.2f}'.format(Ts[1])+'s\ns='+'{:.2f}'.format(shifts[1])
-        wave1_txt += '\ndir='+str(dirs[1])
-        wave1_lbl.text = wave1_txt
+    set_wave_lbl(i)
         
     change_wave(i,As[i],Ts[i],shifts[i],dirs[i])
     change_sumwave()
 
 def set_dir(r):
-    global dirs, wave1_lbl
+    global dirs
     
     i = r.wavenum
     #r.checked = not r.checked  #it switches this automatically when clicked
@@ -251,14 +253,11 @@ def set_dir(r):
     else:
         dirs[i] = 1
         
-    if i == 1:
-        wave1_txt = 'wave2\nA='+'{:.2f}'.format(As[1])+'\nL='+'{:.2f}'.format(v*Ts[1])
-        wave1_txt += 'm\nT='+'{:.2f}'.format(Ts[1])+'s\ns='+'{:.2f}'.format(shifts[1])
-        wave1_txt += '\ndir='+str(dirs[1])
-        wave1_lbl.text = wave1_txt
+    set_wave_lbl(i)
             
     change_wave(i,As[i],Ts[i],shifts[i],dirs[i])
     change_sumwave()
+    
 
 #add slider to change animation rate:
 def set_rate(s):
@@ -280,33 +279,126 @@ T_sldrs = []
 shift_sldrs = []
 dir_radios = []
 #sldr_len = 0.275*cw
-for i in range(1,Nwaves):
+for i in range(Nwaves):
     scn.append_to_caption('Vary wave'+str(i+1)+' Amplitude: \t\t\t\t\t Vary wave')
     scn.append_to_caption(str(i+1)+' Period: \t\t\t\t\t Shift wave'+str(i+1)+':\n')
     
     #use A0s[0] for baseline min and max: A0s[2 or higher] start at 0
     A_sldrs.append(slider(min=0,value=A0s[i],max=A0s[0]*slide_fac,
                     pos=scn.caption_anchor,step=slide_step,length=sldr_len,bind=set_A))
-    A_sldrs[i-1].wavenum = i
+    A_sldrs[i].wavenum = i
     #scn.append_to_caption(' ') #doesn't do anything
     
     #use T0s[0] for baseline min and max
     T_sldrs.append(slider(min=T0s[0]/(10*slide_fac),value=T0s[i],max=T0s[0]*slide_fac,
                     pos=scn.caption_anchor,step=slide_step,length=sldr_len,bind=set_T))
-    T_sldrs[i-1].wavenum = i
+    T_sldrs[i].wavenum = i
 
     #scn.append_to_caption(' ') #doesn't do anything
     
     shift_sldrs.append(slider(min=0,value=shift0s[i],max=2*pi,
                     pos=scn.caption_anchor,length=sldr_len,bind=set_shift))
-    shift_sldrs[i-1].wavenum = i
+    shift_sldrs[i].wavenum = i
     
     scn.append_to_caption('\t')
     
     dir_radios.append(radio(checked=(dirs[i]==-1),text='wave'+str(i+1)+' neg dir?',bind=set_dir))
-    dir_radios[i-1].wavenum = i
+    dir_radios[i].wavenum = i
 
     scn.append_to_caption('\n')
+    
+    
+def make_sumwave_shape(b):
+    #adjusts values, sliders, radios, makes waves and sumwaves for certain wave shape
+    global As, Ts, shifts, dirs, A_sldrs, T_sldrs, shift_sldrs, dir_radios
+    
+    if 'Square' in b.text:
+        A0 = 1.8
+        T0 = 3
+        s0 = 0
+        dir = 1
+        for i in range(Nwaves):
+            As[i] = A0/(2*i+1)
+            Ts[i] = T0/(2*i+1)
+            shifts[i] = s0
+            dirs[i] = dir
+            
+    elif 'Triangle' in b.text:
+        A0 = 1.8
+        T0 = 3.0
+        s0 = 0
+        dir = 1
+        for i in range(Nwaves):
+            As[i] = A0/(2*i+1)**2
+            Ts[i] = T0/(2*i+1)
+            shifts[i] = pi*(i%2)
+            dirs[i] = dir
+    
+    elif 'Batman' in b.text:
+        A0 = 1.8
+        T0 = 3.0
+        s0 = 0
+        dir = 1
+        for i in range(Nwaves):
+            if i < 2:
+                As[i] = A0/(1.5*i+1)
+                Ts[i] = T0/(2*i+1)
+            elif i == 2:
+                As[i] = A0/(3*i+2.5)
+                Ts[i] = T0/(2*i+1)
+            else:
+                As[i] = 0
+                
+            shifts[i] = s0
+            dirs[i] = dir
+
+            
+    #set all sliders and radio, set label and change waves
+    for i in range(Nwaves):
+        A_sldrs[i].value = As[i]
+        T_sldrs[i].value = Ts[i]
+        shift_sldrs[i].value = shifts[i]
+        dir_radios[i].checked = (dirs[i] == -1)
+        
+        set_wave_lbl(i)
+        change_wave(i,As[i],Ts[i],shifts[i],dirs[i])
+    
+    #make the sumwave
+    change_sumwave()
+
+sq_wave = button(text='Approx Square', pos=scn.title_anchor,
+            bind=make_sumwave_shape)
+tri_wave = button(text='Approx Triangle', pos=scn.title_anchor,
+            bind=make_sumwave_shape)
+bat_wave = button(text='Approx Batman', pos=scn.title_anchor,
+            bind=make_sumwave_shape)
+
+
+
+def reset_waves():
+    global As, Ts, shifts, dirs, A_sldrs, T_sldrs, shift_sldrs, dir_radios, t, t_lbl
+    
+    t = 0
+    t_lbl.text='t='+'{:.2f}'.format(t)+spacebar_txt
+    
+    for i in range(Nwaves):
+        As[i] = A0s[i]
+        Ts[i] = T0s[i]
+        shifts[i] = shift0s[i]
+        dirs[i] = dir0s[i]
+        
+        A_sldrs[i].value = As[i]
+        T_sldrs[i].value = Ts[i]
+        shift_sldrs[i].value = shifts[i]
+        dir_radios[i].checked = (dirs[i] == -1)
+        
+        set_wave_lbl(i)
+        change_wave(i, As[i], Ts[i], shifts[i], dirs[i])
+    
+    change_sumwave()
+
+
+reset_wave = button(text='Reset Waves',pos=scn.title_anchor,bind=reset_waves)
     
 #spacebar pauses all motion: set is_paused
 is_paused = True
@@ -331,4 +423,5 @@ while True:
         change_sumwave()
         t_lbl.text='t='+'{:.2f}'.format(t)+spacebar_txt
         t += dt
+
 
