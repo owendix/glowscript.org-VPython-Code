@@ -14,6 +14,18 @@ GlowScript 2.2 VPython
 #LEADS TO JUMPS AT THE TURN OF THE YEAR. THE BEST OPTION IS TO PLOT VS 
 #DECIMALS OF A MONTH, RELATIVE TO JAN 1ST (X=0)
 
+cw = 800
+ch = cw
+
+gw = 0.6*cw
+gh = 0.39*gw
+thetitle='<b>2015-16 (left), 2016-17 (right);  x: mo.(day/days_per_mo), x=0: Jan 1st<b\>'
+ymax0 = 100
+ymax1 = 7
+ymax2 = 55
+ymax3 = 70
+
+
 #2016-2017 season
 cols=['Date','Weekday','MinDepth','MaxDepth','NewBaseSnow','NewPeakSnow','AzSbTemp','LowTemp','HighTemp','PrecipProb','OpenLifts','Lifts','OpenTrails','Trails','SnowCond','RoadCond','WeatherCond','SnowHazard','RoadHazard']
 data = [['2016-11-25','Friday',17,17,0,0,29,float('NaN'),float('NaN'),float('NaN'),1,5,7,47,'POWDER/PACKED POWDER/GROOMED','CLEAR','SUNNY AND BEAUTIFUL WEATHER FORECAST THROUGH SATURDAY! MORE SNOW ON THE WAY FOR SUNDAY AND MONDAY!',3,0],
@@ -232,12 +244,6 @@ def wrangle_data():
 
 wrangle_data()
 
-cw = 800
-ch = cw
-
-gw = 0.7*cw
-gh = 0.333*gw
-
 #subplot: 0,0:2, (all slice ends exclusive)
 #'MinDepth','MaxDepth','NewBaseSnow','NewPeakSnow'
 #subplot: 1,0:2
@@ -250,16 +256,15 @@ gh = 0.333*gw
 #ALL olddata has prefix old: e.g. oldMinDepth, oldTemp
 #olddate vs date
 clr = [color.blue,color.green,color.red,color.black,color.magenta,color.orange,color.yellow]
-title1='Snowbowl stats 2015-16 (left), 2016-17 (right); x=0 at 01 Jan'
 
-gInch00 = graph(width=gw,height=gh,align='left',ymin=0,title=title1)
-gInch01 = graph(width=gw,height=gh,align='right',ymin=0)
-gHzd10 = graph(width=gw,height=gh,align='left',ymin=0,ymax=6)
-gHzd11 = graph(width=gw,height=gh,align='right',ymin=0,ymax=6)
-gOpen20 = graph(width=gw,height=gh,align='left',ymin=0,ymax=50)
-gOpen21 = graph(width=gw,height=gh,align='right',ymin=0,ymax=50)
-gTemp30 = graph(width=gw,height=gh,align='left')
-gTemp31 = graph(width=gw,height=gh,align='right')
+gInch00 = graph(width=gw,height=gh,align='left',ymin=0,ymax=ymax0,title=thetitle)
+gInch01 = graph(width=gw,height=gh,align='right',ymin=0,ymax=ymax0)
+gHzd10 = graph(width=gw,height=gh,align='left',ymin=0,ymax=ymax1)
+gHzd11 = graph(width=gw,height=gh,align='right',ymin=0,ymax=ymax1)
+gOpen20 = graph(width=gw,height=gh,align='left',ymin=0,ymax=ymax2)
+gOpen21 = graph(width=gw,height=gh,align='right',ymin=0,ymax=ymax2)
+gTemp30 = graph(width=gw,height=gh,align='left',ymax=ymax3)
+gTemp31 = graph(width=gw,height=gh,align='right',ymax=ymax3)
 
 #plot them
 p00a = gcurve(graph=gInch00,pos=oldMinDepth,label='MinDepth (in)',color=clr[0])
@@ -293,5 +298,4 @@ p30a = gcurve(graph=gTemp30,pos=oldTemp,label='snowbowlTemp (F)',color=clr[2])
 p31a = gcurve(graph=gTemp31,pos=AzSbTemp,label='snowbowlTemp (F)',color=clr[2])
 p31b = gcurve(graph=gTemp31,pos=LowTemp,label='LowTemp (F)',color=clr[0])
 p31c = gcurve(graph=gTemp31,pos=HighTemp,label='HighTemp (F)',color=clr[1])
-
 
